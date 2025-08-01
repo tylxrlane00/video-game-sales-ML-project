@@ -34,6 +34,35 @@ def predict():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/upload", methods=["POST"])
+def upload():
+    try:
+        if "file" not in request.files:
+            return "No file part", 400
+
+        file = request.files["file"]
+
+        if file.filename == "":
+            return "No selected file", 400
+
+        # Read CSV into a DataFrame
+        df = pd.read_csv(file)
+
+        # Make predictions
+        predictions = model.predict(df)
+        probabilities = model.predict_proba(df)[:, 1]
+
+        # Add predictions to DataFrame
+        df["Prediction"] = predictions
+        df["Probability_Top_Grossing"] = probabilities
+
+        # Show result as HTML table
+        return render_template("results.html", tables=[df.to_html(classes="table table-bordered", index=False)], titles=df.columns.values)
+
+    except Exception as e:
+        return f"An error occurred: {e}", 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)

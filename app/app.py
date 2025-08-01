@@ -31,15 +31,12 @@ def predict():
         df = df.select_dtypes(include=["number"])
         expected_features = model.feature_names_in_
 
-        # Keep only expected features
+        # Keep only expected features and ensure correct order
         df = df[[col for col in expected_features if col in df.columns]]
-
-        # Check for missing columns
         missing_cols = set(expected_features) - set(df.columns)
         if missing_cols:
             return f"Missing required features: {', '.join(missing_cols)}", 400
 
-        # Ensure correct column order
         df = df[expected_features]
 
         preds = model.predict(df)
@@ -49,13 +46,14 @@ def predict():
         df_results["Prediction"] = preds
         df_results["Probability_Top_Grossing"] = probas.round(4)
 
-        output_path = "final_output/predictions.csv"
+        output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "final_output", "predictions.csv")
         df_results.to_csv(output_path, index=False)
 
         return send_file(output_path, as_attachment=True)
 
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)

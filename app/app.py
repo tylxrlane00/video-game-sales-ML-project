@@ -2,7 +2,7 @@
 
 import os
 import pandas as pd
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 from joblib import load
 
 app = Flask(__name__)
@@ -18,22 +18,38 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.get_json()
+        if 'file' not in request.files:
+            return "No file part", 400
 
-        if not data:
-            return jsonify({"error": "No input data provided"}), 400
+        file = request.files['file']
+        if file.filename == "":
+            return "No selected file", 400
 
-        df = pd.DataFrame([data])  # wrap in list to handle single record
-        prediction = model.predict(df)[0]
-        prob = model.predict_proba(df)[0][1]  # probability of class 1 (top grossing)
+        df = pd.read_csv(file)
 
-        return jsonify({
-            "prediction": int(prediction),
-            "probability_top_grossing": round(prob, 4)
-        })
+        # Match training-time preprocessing
+        df = df.drop(columns=["Game", "Publisher", "Rank", "Year"], errors="ignore")
+        df = df.select_dtypes(include=["number"])
+
+        # Make sure columns match exactly (same order, no extras or missing)
+        expected_features = model.feature_names_in_
+        df = df[expected_features]
+
+        preds = model.predict(df)
+        probas = model.predict_proba(df)[:, 1]
+
+        df_results = df.copy()
+        df_results["Prediction"] = preds
+        df_results["Probability_Top_Grossing"] = probas.round(4)
+
+        output_path = "final_output/predictions.csv"
+        df_results.to_csv(output_path, index=False)
+
+        return send_file(output_path, as_attachment=True)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return f"An error occurred: {str(e)}", 500
+
     
 @app.route("/upload", methods=["POST"])
 def upload():

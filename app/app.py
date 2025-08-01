@@ -1,21 +1,19 @@
 # app/app.py
 
 import os
-import pickle
 import pandas as pd
-from flask import Flask, request, jsonify
-from sklearn.preprocessing import StandardScaler
+from flask import Flask, request, jsonify, render_template
+from joblib import load
 
 app = Flask(__name__)
 
-# Load model
+# Load model with joblib
 model_path = os.path.join(os.path.dirname(__file__), 'model', 'best_final_model.pkl')
-with open(model_path, 'rb') as f:
-    model = pickle.load(f)
+model = load(model_path)
 
 @app.route("/")
 def home():
-    return "Top Grossing Game Predictor API is running!"
+    return render_template('index.html')
 
 @app.route("/predict", methods=["POST"])
 def predict():

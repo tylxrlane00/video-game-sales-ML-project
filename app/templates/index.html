@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Game Sales MVP</title>
+</head>
+<body style="font-family: Arial; max-width: 600px; margin: auto; padding: 2rem;">
+  <h2>Upload CSV to Predict Top Grossing Games</h2>
+
+  <form action="/predict" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv" required>
+    <br><br>
+    <button type="submit">Upload & Predict</button>
+  </form>
+
+</body>
+</html>

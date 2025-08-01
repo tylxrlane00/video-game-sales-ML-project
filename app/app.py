@@ -27,12 +27,19 @@ def predict():
 
         df = pd.read_csv(file)
 
-        # Match training-time preprocessing
-        df = df.drop(columns=["Game", "Publisher", "Rank", "Year"], errors="ignore")
+        # Remove non-numeric and identifier columns
         df = df.select_dtypes(include=["number"])
-
-        # Make sure columns match exactly (same order, no extras or missing)
         expected_features = model.feature_names_in_
+
+        # Keep only expected features and ensure correct order
+        df = df[[col for col in expected_features if col in df.columns]]
+
+        # Check if any expected columns are missing
+        missing_cols = set(expected_features) - set(df.columns)
+        if missing_cols:
+            return f"Missing required features: {', '.join(missing_cols)}", 400
+
+        # Ensure correct order
         df = df[expected_features]
 
         preds = model.predict(df)
@@ -49,6 +56,7 @@ def predict():
 
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
+
 
     
 @app.route("/upload", methods=["POST"])
